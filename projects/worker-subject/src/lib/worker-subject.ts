@@ -32,9 +32,11 @@ export class WorkerSubject<T = unknown> extends Subject<T> {
 
   public constructor(worker: Worker);
   public constructor();
-  public constructor() {
+  public constructor(worker?: Worker) {
     super();
-    if (!this.worker)
+    if (worker)
+      this.worker = worker;
+    else
       this.worker = <DedicatedWorkerGlobalScope><unknown>globalThis;
     this._messageSubscription = fromEvent<MessageEvent<T>>(this.worker, "message")
       .subscribe(message => super.next(message.data))
