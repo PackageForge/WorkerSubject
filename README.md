@@ -7,7 +7,7 @@ Add the package to your project on the command line:
 npm install @packageforge/worker-subject --save
 ```
 
-Note, if in an Angular project, you create a web-worker with the Angular CLI like so:
+Note, if in an Angular project, you can create a web-worker with the Angular CLI like so:
 ```typescript
 ng g web-worker app
 ```
