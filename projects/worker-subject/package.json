@@ -1,0 +1,7 @@
+{
+  "name": "@packageforge/worker-subject",
+  "version": "0.0.1",
+  "dependencies": {
+    "rxjs": ">=6.3.3"
+  }
+}

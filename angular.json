@@ -30,7 +30,8 @@
             "styles": [
               "src/styles.css"
             ],
-            "scripts": []
+            "scripts": [],
+            "webWorkerTsConfig": "tsconfig.worker.json"
           },
           "configurations": {
             "production": {
@@ -102,7 +103,8 @@
             "tsConfig": [
               "tsconfig.app.json",
               "tsconfig.spec.json",
-              "e2e/tsconfig.json"
+              "e2e/tsconfig.json",
+              "tsconfig.worker.json"
             ],
             "exclude": [
               "**/node_modules/**"
@@ -119,6 +121,46 @@
             "production": {
               "devServerTarget": "WorkerSubject:serve:production"
             }
+          }
+        }
+      }
+    },
+    "worker-subject": {
+      "projectType": "library",
+      "root": "projects/worker-subject",
+      "sourceRoot": "projects/worker-subject/src",
+      "prefix": "lib",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:ng-packagr",
+          "options": {
+            "tsConfig": "projects/worker-subject/tsconfig.lib.json",
+            "project": "projects/worker-subject/ng-package.json"
+          },
+          "configurations": {
+            "production": {
+              "tsConfig": "projects/worker-subject/tsconfig.lib.prod.json"
+            }
+          }
+        },
+        "test": {
+          "builder": "@angular-devkit/build-angular:karma",
+          "options": {
+            "main": "projects/worker-subject/src/test.ts",
+            "tsConfig": "projects/worker-subject/tsconfig.spec.json",
+            "karmaConfig": "projects/worker-subject/karma.conf.js"
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "projects/worker-subject/tsconfig.lib.json",
+              "projects/worker-subject/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**"
+            ]
           }
         }
       }
