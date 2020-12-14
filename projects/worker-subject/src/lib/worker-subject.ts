@@ -13,20 +13,29 @@ export function workerSubject<T>(worker?: Worker) {
     return new WorkerSubject<T>(worker);
   return new WorkerSubject<T>();
 }
-type WorkerScope = DedicatedWorkerGlobalScope & { terminate?: () => void };
+
+interface DedicatedWorkerGlobalScope { // Too much of a pain to get DedicatedWorkerGlobalScope included in build, roll own.
+  postMessage(message: any, transfer: Transferable[]): void;
+  postMessage(message: any, options?: PostMessageOptions): void;
+  addEventListener<K extends keyof WorkerEventMap>(type: K, listener: (this: Worker, ev: WorkerEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+  addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+  removeEventListener<K extends keyof WorkerEventMap>(type: K, listener: (this: Worker, ev: WorkerEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+  removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
+  terminate?(): void;
+}
 
 export class WorkerSubject<T = unknown> extends Subject<T> {
   private _messageSubscription: Subscription | void
   private _messageerrorSubscription: Subscription | void
   private _errorSubscription: Subscription | void
-  private worker: Worker | WorkerScope | void = void (0)
+  private worker: Worker | DedicatedWorkerGlobalScope | void = void (0)
 
   public constructor(worker: Worker);
   public constructor();
   public constructor() {
     super();
     if (!this.worker)
-      this.worker = <WorkerScope><unknown>globalThis;
+      this.worker = <DedicatedWorkerGlobalScope><unknown>globalThis;
     this._messageSubscription = fromEvent<MessageEvent<T>>(this.worker, "message")
       .subscribe(message => super.next(message.data))
     this._messageerrorSubscription = fromEvent<MessageEvent<T>>(this.worker, "messageerror")
