@@ -6,25 +6,26 @@ export interface ITaskMessage<T> {
 export interface IStateMessage<T> {
   state: T
 }
-export function workerSubject<T = unknown>(worker: Worker): WorkerSubject<T>
-export function workerSubject<T = unknown>(): WorkerSubject<T>
-export function workerSubject<T>(worker?: Worker) {
+export function workerSubject<T, N>(worker: Worker): WorkerSubject<T, N>
+export function workerSubject<T, N>(): WorkerSubject<T, N>
+export function workerSubject<T, N>(worker?: Worker) {
   if (worker)
-    return new WorkerSubject<T>(worker);
-  return new WorkerSubject<T>();
+    return new WorkerSubject<T, N>(worker);
+  return new WorkerSubject<T, N>();
 }
 
-interface DedicatedWorkerGlobalScope { // Too much of a pain to get DedicatedWorkerGlobalScope included in build, roll own.
+// Too much of a pain to get DedicatedWorkerGlobalScope included in build, roll own.
+interface DedicatedWorkerGlobalScope {
   postMessage(message: any, transfer: Transferable[]): void;
   postMessage(message: any, options?: PostMessageOptions): void;
   addEventListener<K extends keyof WorkerEventMap>(type: K, listener: (this: Worker, ev: WorkerEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
   addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
   removeEventListener<K extends keyof WorkerEventMap>(type: K, listener: (this: Worker, ev: WorkerEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
   removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
-  terminate?(): void;
+  terminate?(): void; // Add to prevent error in _terminate method below.
 }
 
-export class WorkerSubject<T = unknown> extends Subject<T> {
+export class WorkerSubject<T, N> extends Subject<T> {
   private _messageSubscription: Subscription | void
   private _messageerrorSubscription: Subscription | void
   private _errorSubscription: Subscription | void
@@ -56,16 +57,17 @@ export class WorkerSubject<T = unknown> extends Subject<T> {
       this.worker = this.worker.terminate();
     }
   }
-  public next(message: any, transfer: Transferable[]): void
-  public next(message: any, options?: PostMessageOptions): void
-  public next(message: any, options: any) {
+  public next(message: N, transfer: Transferable[]): void;
+  public next(message: N, options?: PostMessageOptions): void;
+  public next(message: T): void; // Grrr, can't get rid of this.
+  public next(message: T | N, options?: any) {
     if (this.closed)
       throw new ObjectUnsubscribedError();
     if (!this.isStopped && this.worker)
-      if (arguments.length === 1)
-        this.worker.postMessage(message);
-      else
+      if (arguments.length === 2)
         this.worker.postMessage(message, options);
+      else
+        this.worker.postMessage(message);
   }
   public error(err: any) {
     this._terminate();
