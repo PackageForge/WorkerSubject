@@ -1,13 +1,13 @@
 # @packageforge/worker-subject
 
-A TypeScript Observable wrapper the Worker class. A `WorkerSubject` can be used in both the main thread (normally a browser) and/or in the worker thread. Call `subscribe` to receive messages, call `next` to send them.
+A TypeScript Observable wrapper for the Worker class. A `WorkerSubject` can be used in both the main thread (normally a browser) and/or in the worker thread. Call `subscribe` to receive messages, call `next` to send them.
 
 Add the package to your project on the command line:
 ```
 npm install @packageforge/worker-subject --save
 ```
 
-Note, if in an Angular project, you create a web-worker with the Angular CLI like so:
+Note, if in an Angular project, you can create a web-worker with the Angular CLI like so:
 ```typescript
 ng g web-worker app
 ```
