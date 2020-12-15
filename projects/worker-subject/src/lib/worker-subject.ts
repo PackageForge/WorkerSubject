@@ -1,17 +1,17 @@
 import { fromEvent, ObjectUnsubscribedError, Subject, Subscription } from 'rxjs';
 
-export interface ITaskMessage<T> {
-  task: T
+export interface ITaskMessage<TASK> {
+  task: TASK
 }
-export interface IStateMessage<T> {
-  state: T
+export interface IStateMessage<STATE> {
+  state: STATE
 }
-export function workerSubject<T, N>(worker: Worker): WorkerSubject<T, N>
-export function workerSubject<T, N>(): WorkerSubject<T, N>
-export function workerSubject<T, N>(worker?: Worker) {
+export function workerSubject<SEND, RECEIVE>(worker: Worker): WorkerSubject<SEND, RECEIVE>
+export function workerSubject<SEND, RECEIVE>(): WorkerSubject<SEND, RECEIVE>
+export function workerSubject<SEND, RECEIVE>(worker?: Worker) {
   if (worker)
-    return new WorkerSubject<T, N>(worker);
-  return new WorkerSubject<T, N>();
+    return new WorkerSubject<SEND, RECEIVE>(worker);
+  return new WorkerSubject<SEND, RECEIVE>();
 }
 
 // Too much of a pain to get DedicatedWorkerGlobalScope included in build, roll own.
@@ -25,7 +25,7 @@ interface DedicatedWorkerGlobalScope {
   terminate?(): void; // Add to prevent error in _terminate method below.
 }
 
-export class WorkerSubject<T, N> extends Subject<T> {
+export class WorkerSubject<SEND, RECEIVE> extends Subject<RECEIVE> {
   private _messageSubscription: Subscription | void
   private _messageerrorSubscription: Subscription | void
   private _errorSubscription: Subscription | void
@@ -39,9 +39,9 @@ export class WorkerSubject<T, N> extends Subject<T> {
       this.worker = worker;
     else
       this.worker = <DedicatedWorkerGlobalScope><unknown>globalThis;
-    this._messageSubscription = fromEvent<MessageEvent<T>>(this.worker, "message")
+    this._messageSubscription = fromEvent<MessageEvent<RECEIVE>>(this.worker, "message")
       .subscribe(message => super.next(message.data))
-    this._messageerrorSubscription = fromEvent<MessageEvent<T>>(this.worker, "messageerror")
+    this._messageerrorSubscription = fromEvent<MessageEvent<RECEIVE>>(this.worker, "messageerror")
       .subscribe(message => super.error(message))
     this._errorSubscription = fromEvent<ErrorEvent>(this.worker, "error")
       .subscribe(message => super.error(message))
@@ -57,10 +57,10 @@ export class WorkerSubject<T, N> extends Subject<T> {
       this.worker = this.worker.terminate();
     }
   }
-  public next(message: N, transfer: Transferable[]): void;
-  public next(message: N, options?: PostMessageOptions): void;
-  public next(message: T): void; // Grrr, can't get rid of this.
-  public next(message: T | N, options?: any) {
+  public next(message: SEND, transfer: Transferable[]): void;
+  public next(message: SEND, options?: PostMessageOptions): void;
+  public next(message: RECEIVE): void; // Grrr, can't get rid of this.
+  public next(message: RECEIVE | SEND, options?: any) {
     if (this.closed)
       throw new ObjectUnsubscribedError();
     if (!this.isStopped && this.worker)
