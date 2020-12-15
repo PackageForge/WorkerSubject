@@ -87,60 +87,65 @@ Examples:
 ```typescript
 import { ITaskMessage, IStateMessage } from '@packageforge/worker-subject';
 
+export type IMyTaskMessage =  // Add other tasks as needed.
+    IMyDoSomethingTaskMessage;
+
+export type IMyStateMessage =  // Add states for other tasks as needed.
+    IMyDoSomethingStateMessage;
+
 export interface IMyDoSomethingTaskMessage extends ITaskMessage<'DO_SOMETHING'> {
   data: number
 }
-export type IMyTaskMessage =  // Add other tasks as needed.
-    IMyDoSomethingTaskMessage;
-export interface EMyDoSomethingWorkingStateMessage extends IStateMessage<'WORKING'> {
+export type IMyDoSomethingStateMessage = 
+    IMyDoSomethingWorkingStateMessage | 
+    IMyDoSomethingCollatingStateMessage |
+    IMyDoSomethingCompleteStateMessage;
+
+export interface IMyDoSomethingWorkingStateMessage extends IStateMessage<'WORKING'> {
   progress: number
 }
-export interface EMyDoSomethingCollatingStateMessage extends IStateMessage<'COLLATING'> {
+export interface IMyDoSomethingCollatingStateMessage extends IStateMessage<'COLLATING'> {
   amount: number
   progress: number
 }
-export interface EMyDoSomethingCompleteStateMessage extends IStateMessage<'COMPLETE'> {
+export interface IMyDoSomethingCompleteStateMessage extends IStateMessage<'COMPLETE'> {
   result: number
 }
-export type IMyDoSomethingStateMessage = 
-    EMyDoSomethingWorkingStateMessage | 
-    EMyDoSomethingCollatingStateMessage |
-    EMyDoSomethingCompleteStateMessage;
 ```
 
 
 
-In the main thread/browser code, use the state messages as the type parameter:
+In the main thread/browser code, send task messages and receive state messages:
 ```typescript
 import { workerSubject } from '@packageforge/worker-subject';
 
 // Create a typed WorkerSubject:
-const worker = workerSubject<IMyDoSomethingStateMessage>(new Worker('./app.worker', { type: 'module' }));
+const worker = workerSubject<IMyDoSomethingTaskMessage, IMyDoSomethingStateMessage>(new Worker('./app.worker', { type: 'module' }));
 
 // Incoming messages are now of type IMyDoSomethingStateMessage
 worker
   .pipe(takeWhile(message => message.state !== "COMPLETE", true)) // Use inclusive takeWhile.
   .pipe(finalize(() => worker.complete())) // Terminates the worker thread when done with task.
   .subscribe(message => {
-    if (message.state === 'WORKING') // type EMyDoSomethingWorkingStateMessage
+    if (message.state === 'WORKING') // type IMyDoSomethingWorkingStateMessage
       console.log(message.progress);
-    if (message.state === 'COLLATING') // type EMyDoSomethingCollatingStateMessage
+    if (message.state === 'COLLATING') // type IMyDoSomethingCollatingStateMessage
       console.log(message.progress, message.amount);
-    if (message.state === 'COMPLETE') // type EMyDoSomethingCompleteStateMessage
+    if (message.state === 'COMPLETE') // type IMyDoSomethingCompleteStateMessage
       console.log(message.result);
   });
 
-// Outgoing messages should conform to task messages.
+// Outgoing messages must be a IMyDoSomethingTaskMessage.
 worker.next({ task: "DO_SOMETHING", data: 1234});
 ```
 
-In the worker code it is the opposite, use the task messages as the type parameter :
+In the worker code it is the opposite, send state messages and receive task messages :
 ```typescript
 /// <reference lib="webworker" />
 import { workerSubject } from '@packageforge/worker-subject';
 
 // Create a typed WorkerSubject:
-const worker = workerSubject<IMyTaskMessage>();
+const worker = workerSubject<IMyStateMessage, IMyTaskMessage>();
 
 // Subscribe to messages coming from the main thread.
 worker.subscribe(message => { // message is one of the IMyTaskMessage types.
@@ -149,13 +154,17 @@ worker.subscribe(message => { // message is one of the IMyTaskMessage types.
 });
 
 function doSomething(data: number) {
-  worker.next({state: "WORKING", progress: 0}); // Let the main thread know we are starting.
+  // Let the main thread know we are starting.
+  worker.next({state: "WORKING", progress: 0}); // IMyDoSomethingWorkingStateMessage
   // Do something intensive.
-  worker.next({state: "WORKING", progress: 0.5}); // Let the main thread know we are half way done.
+  // Let the main thread know we are half way done.
+  worker.next({state: "WORKING", progress: 0.5}); // IMyDoSomethingWorkingStateMessage
   // Do something intensive.
-  worker.next({state: "COLLATING", progress: 0.75, amount: 110}); // Let the main thread know we are finishing up.
+  // Let the main thread know we are finishing up.
+  worker.next({state: "COLLATING", progress: 0.75, amount: 110}); // IMyDoSomethingCollatingStateMessage
   // Collate that data.
-  worker.next({state: "COMPLETE", result: 110*data}); // Task complete, send the results.
+  // Task complete, send the results.
+  worker.next({state: "COMPLETE", result: 110*data}); // IMyDoSomethingCompleteStateMessage
 }
 ```
 
