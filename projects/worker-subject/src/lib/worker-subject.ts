@@ -57,10 +57,12 @@ export class WorkerSubject<SEND, RECEIVE> extends Subject<RECEIVE> {
       this.worker = this.worker.terminate();
     }
   }
+  // @ts-ignore Suppress property 'next' is not assignable to the same property in base type error.
   public next(message: SEND, transfer: Transferable[]): void;
+  // @ts-ignore Suppress property 'next' is not assignable to the same property in base type error.
   public next(message: SEND, options?: PostMessageOptions): void;
-  public next(message: RECEIVE): void; // Grrr, can't get rid of this.
-  public next(message: RECEIVE | SEND, options?: any) {
+  // @ts-ignore Suppress property 'next' is not assignable to the same property in base type error.
+  public next(message: SEND, options?: any) {
     if (this.closed)
       throw new ObjectUnsubscribedError();
     if (!this.isStopped && this.worker)
