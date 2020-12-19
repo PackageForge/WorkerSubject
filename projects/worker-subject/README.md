@@ -186,7 +186,7 @@ Output:
 
 #### 4: Injecting common data into all task and state messages.
 
-Sometimes messages need to be manipulated in a common way before being sent to the other end. Common configuration, environment, or session settings are examples. Instead of the `WorkerSubject` immediately sending the message, it can pass along as a normal subject would, to be sent by the `workerOperator` operator using pipes instead. Connection errors can also be handled using pipes.
+Sometimes messages need to be manipulated in a common way before being sent to the other end. Common configuration, environment, or session settings are examples. Instead of the `WorkerSubject` immediately sending the message, it can pass data along as a normal subject would, to be sent by the `workerOperator` operator using pipes instead. Connection errors can also be handled using pipes.
 
 In both the main thread/browser code and the worker thread, do not pass any parameters (and at most one type parameter). Then pipe that into whatever data manipulation operator is needed (a simple `tap` can be used to inject data). Then pipe that into the `workerOperator`, passing a `Worker` object (main thread/browser code) or the `globalThis` object (worker thread), and a type parameter if desired.
 
