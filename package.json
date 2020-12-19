@@ -5,7 +5,7 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build worker-subject --prod",
-    "postbuild": "replace-in-files --regex='next' \"--replacement='// @ts-ignore\\n    next'\" ./dist/worker-subject/lib/worker-subject.d.ts",
+    "postbuild": "replace-in-files \"--regex='    next'\" \"--replacement='    // @ts-ignore\\n    next'\" ./dist/worker-subject/lib/worker-subject.d.ts",
     "test": "ng test",
     "lint": "ng lint",
     "e2e": "ng e2e"

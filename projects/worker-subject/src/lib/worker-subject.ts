@@ -1,4 +1,4 @@
-import { fromEvent, ObjectUnsubscribedError, Observable, Subject, Subscription } from 'rxjs';
+import { fromEvent, ObjectUnsubscribedError, Observable, Observer, Subject, Subscription } from 'rxjs';
 import { IWorkerMessage, WorkerArg } from './types';
 
 export function workerSubject<SEND, RECEIVE>(worker: WorkerArg): WorkerSubject<SEND, RECEIVE>
@@ -23,7 +23,15 @@ export class WorkerSubject<SEND, RECEIVE = IWorkerMessage<SEND>> extends Subject
         this._send(workerMessage.message, workerMessage.options)
       });
   }
-  public subscribe(...args: any[]) {
+  subscribe(observer?: Partial<Observer<RECEIVE>>): Subscription;
+  /** @deprecated Use an observer instead of a complete callback */
+  subscribe(next: null | undefined, error: null | undefined, complete: () => void): Subscription;
+  /** @deprecated Use an observer instead of an error callback */
+  subscribe(next: null | undefined, error: (error: any) => void, complete?: () => void): Subscription;
+  /** @deprecated Use an observer instead of a complete callback */
+  subscribe(next: (value: RECEIVE) => void, error: null | undefined, complete: () => void): Subscription;
+  subscribe(next?: (value: RECEIVE) => void, error?: (error: any) => void, complete?: () => void): Subscription;
+  subscribe(...args:any[]): Subscription {
     this._connect();
     const unsub = super.subscribe(...args);
     if (this.worker)
