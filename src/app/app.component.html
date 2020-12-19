@@ -1,1 +1,4 @@
-WorkerSubject
+<h1>WorkerSubject</h1>
+<ng-container *ngFor="let test of tests; index as i">
+  <input type=button [value]="'Test '+(i+1)" (click)="test()" style="margin:10px">
+</ng-container>
