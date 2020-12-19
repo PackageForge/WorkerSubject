@@ -341,8 +341,21 @@ Examples:
 ```typescript
 import { workerSubject } from '@packageforge/worker-subject';
 
-  // Create a WorkerSubject:
+  // Create a WorkerSubject, note we are passing a function that returns a Worker:
   const worker = workerSubject(() => new Worker('./test1.worker', { type: 'module', name: 'test1' }));
 
   // Note that the worker thread is not started as neither next nor subscribe is called.
+
+  // It is the same when using workerOperator:
+  const worker2 = workerSubject();
+
+  const worker2Modifier = worker2
+    .pipe(tap(data => {
+      data.message.userId = getUserId() // Modify all task messages to add the user id.
+    }))
+    // Again, we are passing a function that returns a Worker.
+    .pipe(workerOperator<IMyDoSomethingStateMessage>(() => new Worker('./test4.worker', { type: 'module', name: "test4" })));
+
+  // Note that this worker thread is not started as well.
+
 ```

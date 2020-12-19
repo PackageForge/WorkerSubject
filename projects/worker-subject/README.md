@@ -194,7 +194,7 @@ Note that two variables are being managed now:
 * The instance of the `WorkerSubject`, whose `next` method is called to send messages.
 * The instance of an `Observable` piped from that subject, whose `pipe` and `subscribe` methods are called to connect and listen for messages.
 
-The example below builds on the example above, adding the user id to every message sent out, and the processing time to every message back.
+The example below builds on the example above, adding the user id to every message sent out, and the processing time to every message sent back.
 
 First, add the new properties to the types:
 ```typescript
@@ -230,7 +230,7 @@ export interface IMyDoSomethingCompleteStateMessage extends IStateMessage<'COMPL
 }
 ```
 
-In the main thread/browser code, call `workerSubject` without a parameter and store that as a variable. Then pipe off that variable to first modify all outgoing messages, then pipe to `workerOperator` passing a `Worker` object, and save that observable as a second variable. When sending a message, subscribe to this second variable.
+In the main thread/browser code, call `workerSubject` without a parameter and store that as a variable. Then pipe off that variable to first modify all outgoing messages, then pipe that to `workerOperator` passing a `Worker` object, and save that observable as a second variable. Use the first variable to send messages, and subscribe to this second variable to recieve them.
 
 Example:
 ```typescript
@@ -280,19 +280,19 @@ import { tap } from 'rxjs/operators';
 import { IMyStateMessage, IMyTaskMessage } from './my-types';
 
 // create a variable to store when task messages are received:
-let lastTaskStartTicks:number = 0;
+let lastTaskStartTicks: number = 0;
 
 // Create a typed WorkerSubject:
 const worker = workerSubject<IMyStateMessage>();
 
-const workerModifier=worker
-  .pipe(tap(data=>{
+const workerModifier = worker
+  .pipe(tap(data => {
     // Modify all outgoing state messages to add ellapsed ticks.
     data.message.ticks = Date.now() - lastTaskStartTicks;
   }))
   // Attach the globalThis object, also passing the task message type parameter if desired.
   .pipe(workerOperator<IMyTaskMessage>(globalThis))
-  .pipe(tap(()=>{
+  .pipe(tap(() => {
     // Store the time of the incomming message.
     lastTaskStartTicks = Date.now();
   }));
@@ -301,25 +301,25 @@ const workerModifier=worker
 workerModifier.subscribe(message => {
   // Display user id that was added to every task message.
   console.log("Doing task " + message.task + " for user " + message.userId);
-  if (message.task === "DO_SOMETHING")
-    doSomething(message.data);
+  if (message.task === "DO_SOMETHING")
+    doSomething(message.data);
 });
 
 async function doSomething(data: number) {
   // Let the main thread know we are starting.
-  worker.next({state: "WORKING", progress: 0});
+  worker.next({ state: "WORKING", progress: 0 });
   // Do something intensive.
   await timer(500).toPromise();
   // Let the main thread know we are half way done.
-  worker.next({state: "WORKING", progress: 0.5});
+  worker.next({ state: "WORKING", progress: 0.5 });
   // Do something intensive.
   await timer(250).toPromise();
   // Let the main thread know we are finishing up.
-  worker.next({state: "COLLATING", progress: 0.75, amount: 110});
+  worker.next({ state: "COLLATING", progress: 0.75, amount: 110 });
   // Collate that data.
   await timer(250).toPromise();
   // Task complete, send the results.
-  worker.next({state: "COMPLETE", result: 110*data});
+  worker.next({ state: "COMPLETE", result: 110 * data });
 }
 ```
 
@@ -341,8 +341,21 @@ Examples:
 ```typescript
 import { workerSubject } from '@packageforge/worker-subject';
 
-  // Create a WorkerSubject:
+  // Create a WorkerSubject, note we are passing a function that returns a Worker:
   const worker = workerSubject(() => new Worker('./test1.worker', { type: 'module', name: 'test1' }));
 
   // Note that the worker thread is not started as neither next nor subscribe is called.
+
+  // It is the same when using workerOperator:
+  const worker2 = workerSubject();
+
+  const worker2Modifier = worker2
+    .pipe(tap(data => {
+      data.message.userId = getUserId() // Modify all task messages to add the user id.
+    }))
+    // Again, we are passing a function that returns a Worker.
+    .pipe(workerOperator<IMyDoSomethingStateMessage>(() => new Worker('./test4.worker', { type: 'module', name: "test4" })));
+
+  // Note that this worker thread is not started as well.
+
 ```
