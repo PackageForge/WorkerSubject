@@ -194,7 +194,7 @@ Note that two variables are being managed now:
 * The instance of the `WorkerSubject`, whose `next` method is called to send messages.
 * The instance of an `Observable` piped from that subject, whose `pipe` and `subscribe` methods are called to connect and listen for messages.
 
-The example below builds on the example above, adding the user id to every message send out, and the processing time to every message back.
+The example below builds on the example above, adding the user id to every message sent out, and the processing time to every message back.
 
 First, add the new properties to the types:
 ```typescript
